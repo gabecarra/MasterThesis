@@ -9,4 +9,4 @@ def non_increasing_ordering(vertices, graph):
     each node in the given graph.
     """
     b_vertices = {key: graph.degree[key] for key in vertices}
-    return sorted(b_vertices, key=b_vertices.get)
+    return sorted(b_vertices, key=b_vertices.get, reverse=True)

@@ -1,91 +1,10 @@
 # main.py - Created by (c) Gabriel H. Carraretto at 21/04/22
 
 import networkx as nx
-import matplotlib.pyplot as plt
 import numpy as np
 import time as t
 from itertools import combinations
-from functools import reduce
-import gurobipy as gp
-from gurobipy import GRB
-import scipy.sparse as sp
-
-def DBC(graph, S, target):
-    """
-
-    :param graph:
-    :param S:
-    :return:
-    """
-
-    n_nodes = graph.number_of_nodes()
-
-    m = gp.Model("DBC")
-
-    # parameter definition
-    m.setParam('OutputFlag', 1)
-    m.setParam('NonConvex', 2)
-    m.setParam('Lazy', 3)
-    m.setParam('Presolve', 1)
-    m.setParam('TimeLimit', 1800)
-
-    print(f'Problem with {n_nodes} nodes')
-
-    m.setAttr('ModelSense', GRB.MINIMIZE)
-
-    # (6) x_ij in {0, 1}
-    x = m.addMVar((n_nodes, n_nodes), ub=1, lb=0, obj=0, vtype=GRB.CONTINUOUS)
-    m.update()
-
-    # (8) x_ii = 1 i in S
-    x[S, S].obj = 1
-
-    # (7) sum x_ii >= T
-    m.addConstr(x.trace() >= target - 1)
-
-    # (2) x_ij <= x_ii forall i in V; j not in N(i)
-    for i in range(n_nodes):
-        N_bar = list(G.nodes - G.neighbors(i) - {i})
-        # not exist k in N_bar(i): (j,k) in E
-        for k in N_bar:
-            for j in N_bar:
-                if k != j:
-                    if not graph.has_edge(k, j):
-                        m.addConstr(x[i, j] <= x[i, i])
-
-    # (3) sum_{k in N(j), k notin N(i)} x_{ik} >= x_{ii} +x_{jj} -1
-    # forall i,j in V: (i,j) notin E
-    for i in range(n_nodes):
-        for j in range(n_nodes):
-            if not graph.has_edge(i, j):
-                k = list(set(G.neighbors(j)) - set(G.neighbors(i)))
-                m.addConstr(x[i, k].sum() > x[i, i] + x[j, j] - 1)
-
-    # (4) sum_{j notin N(i)} x_ji = 1 forall i in V
-    for i in range(n_nodes):
-            j = list(G.nodes - G.neighbors(i) - {i})
-            if j:
-                m.addConstr(x[j, i].sum() == 1)
-
-    # (5) x_ij + x_ik <= x_ii forall i in V; j,k notin N(i); (j,k) in E
-    for i in range(n_nodes):
-        N_bar = list(G.nodes - G.neighbors(i) - {i})
-        for j in N_bar:
-            for k in N_bar:
-                if G.has_edge(j, k):
-                    m.addConstr(x[i, j] + x[i, k] <= x[i, i])
-
-    m.update()
-    m.optimize()
-
-
-def print_graph(graph):
-    """
-    Given a graph, draw it and show the plot window
-    :param graph: a networkx object representing a graph G=(V, E)
-    """
-    nx.draw(graph, with_labels=True)
-    plt.show()
+from DBCmodel import DBCModel
 
 
 def get_candidates(graph, target):
@@ -139,7 +58,7 @@ def select_next_combination(nodes, ranking):
 
 def iterative_matheuristic_algorithm(graph, target, policy, comp_time):
     """
-    TODO: write description
+
     :param graph: a networkx object representing a graph G=(V, E)
     :param target: number of colors
     :param policy: policy fn used to rank the b-vertex candidates
@@ -156,34 +75,24 @@ def iterative_matheuristic_algorithm(graph, target, policy, comp_time):
     start = t.time()
     for S in next_combination:
         # if time limit exceeds, stop the algorithm
-        print(start - t.time(), comp_time)
         if start - t.time() > comp_time:
             break
-        DBC(graph, S, target)
-
+        model = DBCModel(graph)
+        model.optimize()
     return 0
 
 
 if __name__ == '__main__':
-
     # test adj. matrix
     A = np.array([
-        [0, 0, 0, 1, 0, 0, 0],
-        [0, 0, 1, 1, 1, 0, 0],
-        [0, 1, 0, 0, 1, 1, 0],
-        [1, 0, 0, 0, 1, 0, 0],
-        [0, 1, 1, 1, 0, 1, 0],
-        [0, 0, 1, 0, 1, 0, 0],
-        [1, 0, 0, 0, 0, 0, 0]
+        [0, 0, 0, 1, 0, 0],
+        [0, 0, 1, 1, 1, 0],
+        [0, 1, 0, 0, 1, 1],
+        [1, 0, 0, 0, 1, 0],
+        [0, 1, 1, 1, 0, 1],
+        [0, 0, 1, 0, 1, 0],
     ])
 
-    val = np.array([1.0, 2.0, 3.0, -1.0, -1.0])
-    row = np.array([0, 0, 0, 1, 1])
-    col = np.array([0, 1, 2, 0, 1])
-
-    # A = sp.csr_matrix((val, (row, col)), shape=(2, 3))
-
-    print(A)
     G = nx.from_numpy_matrix(A)
 
     solution = iterative_matheuristic_algorithm(

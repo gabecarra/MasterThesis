@@ -3,7 +3,7 @@
 import time as t
 from itertools import combinations
 from DBCmodel import DBCModel
-
+from math import comb
 
 class IterativeMatheuristicAlgorithm:
     def __init__(self, graph, target, policy, comp_time=180):
@@ -55,7 +55,9 @@ class IterativeMatheuristicAlgorithm:
         while run_time < self.comp_time:
             print(f'Optimizing problem with '
                   f'n_nodes={self.graph.number_of_nodes()},'
-                  f' T={self.target}...', end='')
+                  f' T={self.target} and '
+                  f'tot. combinations={comb(self.graph.number_of_nodes(), self.target)}...',
+                  end='')
             P = self.get_candidates()
             o = self.policy(P, self.graph)
             get_combination = self.select_next_combination(o)

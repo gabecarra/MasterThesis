@@ -17,6 +17,18 @@ if __name__ == '__main__':
         G = nx.from_edgelist(edge_list)
         G.name = name
 
+        # test adj. matrix
+        # A = np.array([
+        #     [0, 0, 0, 1, 0, 0],
+        #     [0, 0, 1, 1, 1, 0],
+        #     [0, 1, 0, 0, 1, 1],
+        #     [1, 0, 0, 0, 1, 0],
+        #     [0, 1, 1, 1, 0, 1],
+        #     [0, 0, 1, 0, 1, 0],
+        # ])
+        #
+        # G = nx.from_numpy_matrix(A)
+
         print(f'Instance name: {name}, size: {G.number_of_nodes()}')
         # nx.draw(G)
         # plt.show()
